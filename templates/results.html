@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scan Results #{{ run.id }}</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #102a43;
+      --muted: #486581;
+      --border: #d9e2ec;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 18px 40px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .muted { color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 10px; vertical-align: top; }
+    a { color: #0b5d9a; text-decoration: none; }
+    .sev-Critical, .sev-High { color: #b00020; font-weight: 700; }
+    .sev-Medium { color: #9a6700; font-weight: 700; }
+    .sev-Low { color: #1f6f43; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Scan Run #{{ run.id }}</h1>
+      <p class="muted">
+        Created: {{ run.created_at }} | Source: {{ run.source }} | Triggered by: {{ run.triggered_by }}
+      </p>
+      <p>
+        Risk: <strong>{{ risk_summary.risk_level }}</strong>
+        | Score: <strong>{{ risk_summary.total_score }}</strong>
+        | Findings: <strong>{{ risk_summary.total_findings }}</strong>
+      </p>
+      <p>
+        Reports:
+        <a href="{{ url_for('download_report', filename=report_files.json) }}">JSON</a> |
+        <a href="{{ url_for('download_report', filename=report_files.html) }}">HTML</a> |
+        <a href="{{ url_for('download_report', filename=report_files.pdf) }}">PDF</a>
+      </p>
+      <p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
+    </div>
+
+    <div class="card">
+      <h2>Findings</h2>
+      {% if findings %}
+      <table>
+        <thead>
+          <tr>
+            <th>Severity</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Target</th>
+            <th>Description</th>
+            <th>Payload</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in findings %}
+          <tr>
+            <td class="sev-{{ item.severity }}">{{ item.severity }}</td>
+            <td>{{ item.issue_type }}</td>
+            <td>{{ item.category }}</td>
+            <td>{{ item.target }}</td>
+            <td>{{ item.description }}</td>
+            <td>{{ item.payload or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No findings captured for this run.</p>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
