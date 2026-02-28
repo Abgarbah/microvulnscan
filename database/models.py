@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import create_engine, Column, DateTime, Float, ForeignKey, Integer, String, Text, inspect, text
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 
@@ -41,6 +41,8 @@ class ScanResult(Base):
     category = Column(String(100), nullable=False)
     issue_type = Column(String(100), nullable=False)
     severity = Column(String(20), nullable=False)
+    cve_id = Column(String(64), nullable=True)
+    cvss_score = Column(Float, nullable=True)
     description = Column(Text, nullable=False)
     payload = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -52,4 +54,25 @@ def init_db(db_url="sqlite:///vulnmicroscan.db"):
     connect_args = {"check_same_thread": False} if db_url.startswith("sqlite") else {}
     engine = create_engine(db_url, connect_args=connect_args)
     Base.metadata.create_all(engine)
+    _ensure_scan_result_columns(engine)
     return sessionmaker(bind=engine)
+
+
+def _ensure_scan_result_columns(engine):
+    # Lightweight migration for existing deployments.
+    expected_columns = {
+        "cve_id": "VARCHAR(64)",
+        "cvss_score": "FLOAT",
+    }
+    inspector = inspect(engine)
+    if "scan_results" not in inspector.get_table_names():
+        return
+
+    existing = {col["name"] for col in inspector.get_columns("scan_results")}
+    missing = [name for name in expected_columns if name not in existing]
+    if not missing:
+        return
+
+    with engine.begin() as conn:
+        for name in missing:
+            conn.execute(text(f"ALTER TABLE scan_results ADD COLUMN {name} {expected_columns[name]}"))

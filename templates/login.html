@@ -4,81 +4,52 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ app_name }} | Login</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f4f7fb;
-      color: #102a43;
-    }
-    .wrap {
-      max-width: 420px;
-      margin: 80px auto;
-      background: #fff;
-      border: 1px solid #d9e2ec;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 18px rgba(10, 40, 80, 0.08);
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      margin-bottom: 6px;
-      font-weight: 600;
-    }
-    input {
-      width: 100%;
-      border: 1px solid #d9e2ec;
-      border-radius: 8px;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-    button {
-      margin-top: 14px;
-      width: 100%;
-      background: #0a9396;
-      color: #fff;
-      border: 0;
-      border-radius: 8px;
-      padding: 10px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    .msg {
-      margin-top: 10px;
-      border: 1px solid #e7b9c2;
-      background: #fff4f6;
-      color: #b00020;
-      border-radius: 8px;
-      padding: 10px;
-    }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="wrap">
-    <h1>{{ app_name }}</h1>
-    <p>Sign in to start scans and access reports.</p>
+  <div class="auth-shell">
+    <aside class="auth-side">
+      <p class="kicker">Security Platform</p>
+      <h1>{{ app_name }}</h1>
+      <p>Scan API endpoints and Dockerfiles, then generate clear evidence reports with weighted risk scoring.</p>
+      <ul class="auth-list">
+        <li>Automated checks for API and container security issues.</li>
+        <li>Risk insights prioritized by severity and confidence.</li>
+        <li>Exportable reports in JSON, HTML, and PDF formats.</li>
+      </ul>
+    </aside>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="msg">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+    <main class="auth-panel">
+      <p class="kicker">Welcome Back</p>
+      <h2>Sign in to continue</h2>
+      <p class="muted">Use your account to launch scans and review previous runs.</p>
 
-    <form method="post" action="{{ url_for('login') }}">
-      <label for="username">Username</label>
-      <input id="username" name="username" type="text" required />
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
 
-      <label for="password">Password</label>
-      <input id="password" name="password" type="password" required />
-
-      <button type="submit">Sign In</button>
-    </form>
-    <p style="margin-top: 12px;">
-      No account? <a href="{{ url_for('signup') }}">Create one</a>
-    </p>
+      <form method="post" action="{{ url_for('login') }}">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <div class="button-row">
+          <button class="btn btn-primary" type="submit">Sign In</button>
+          <a class="btn btn-alt" href="{{ url_for('signup') }}">Create Account</a>
+        </div>
+      </form>
+    </main>
   </div>
 </body>
 </html>

@@ -4,90 +4,87 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Scan Results #{{ run.id }}</title>
-  <style>
-    :root {
-      --bg: #f4f7fb;
-      --surface: #ffffff;
-      --text: #102a43;
-      --muted: #486581;
-      --border: #d9e2ec;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 18px 40px; }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 14px;
-    }
-    .muted { color: var(--muted); }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; border-bottom: 1px solid var(--border); padding: 10px; vertical-align: top; }
-    a { color: #0b5d9a; text-decoration: none; }
-    .sev-Critical, .sev-High { color: #b00020; font-weight: 700; }
-    .sev-Medium { color: #9a6700; font-weight: 700; }
-    .sev-Low { color: #1f6f43; font-weight: 700; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Scan Run #{{ run.id }}</h1>
-      <p class="muted">
-        Created: {{ run.created_at }} | Source: {{ run.source }} | Triggered by: {{ run.triggered_by }}
-      </p>
-      <p>
-        Risk: <strong>{{ risk_summary.risk_level }}</strong>
-        | Score: <strong>{{ risk_summary.total_score }}</strong>
-        | Findings: <strong>{{ risk_summary.total_findings }}</strong>
-      </p>
-      <p>
-        Reports:
-        <a href="{{ url_for('download_report', filename=report_files.json) }}">JSON</a> |
-        <a href="{{ url_for('download_report', filename=report_files.html) }}">HTML</a> |
-        <a href="{{ url_for('download_report', filename=report_files.pdf) }}">PDF</a>
-      </p>
-      <p><a href="{{ url_for('dashboard') }}">Back to dashboard</a></p>
-    </div>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-head">
+        <div>
+          <p class="kicker">Scan Summary</p>
+          <h1>Run #{{ run.id }}</h1>
+          <p>Created {{ run.created_at }} | Source {{ run.source }} | Triggered by {{ run.triggered_by }}</p>
+        </div>
+        <a class="btn btn-alt" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+      </div>
 
-    <div class="card">
-      <h2>Findings</h2>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Risk Level</div>
+          <div class="metric-value">
+            <span class="chip chip-{{ risk_summary.risk_level|lower }}">{{ risk_summary.risk_level }}</span>
+          </div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total Score</div>
+          <div class="metric-value">{{ risk_summary.total_score }}</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Total Findings</div>
+          <div class="metric-value">{{ risk_summary.total_findings }}</div>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.json) }}">Download JSON</a>
+        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.html) }}">Download HTML</a>
+        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.pdf) }}">Download PDF</a>
+      </div>
+    </header>
+
+    <section class="panel" style="margin-top: 14px;">
+      <p class="kicker">Detailed Findings</p>
+      <h2>Detected Issues</h2>
       {% if findings %}
-      <table>
-        <thead>
-          <tr>
-            <th>Severity</th>
-            <th>Type</th>
-            <th>Category</th>
-            <th>Target</th>
-            <th>Description</th>
-            <th>Payload</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in findings %}
-          <tr>
-            <td class="sev-{{ item.severity }}">{{ item.severity }}</td>
-            <td>{{ item.issue_type }}</td>
-            <td>{{ item.category }}</td>
-            <td>{{ item.target }}</td>
-            <td>{{ item.description }}</td>
-            <td>{{ item.payload or '-' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>CVE</th>
+                <th>CVSS</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Target</th>
+                <th>Description</th>
+                <th>Payload</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in findings %}
+                <tr>
+                  <td>
+                    <span class="chip chip-{{ item.severity|lower }}">{{ item.severity }}</span>
+                  </td>
+                  <td>{{ item.cve_id or "-" }}</td>
+                  <td>{{ item.cvss_score if item.cvss_score is not none else "-" }}</td>
+                  <td>{{ item.issue_type }}</td>
+                  <td>{{ item.category }}</td>
+                  <td>{{ item.target }}</td>
+                  <td class="wrap">{{ item.description }}</td>
+                  <td class="wrap">{{ item.payload or "-" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
-      <p>No findings captured for this run.</p>
+        <p class="muted">No findings were captured for this scan run.</p>
       {% endif %}
-    </div>
+    </section>
   </div>
 </body>
 </html>

@@ -26,6 +26,7 @@ from database.models import ScanResult, ScanRun, User, init_db
 from reports.report_generator import ReportGenerator
 from risk_engine.risk_calculator import RiskCalculator
 from scanner.api_scanner import APIVulnerabilityScanner
+from scanner.cve_utils import CVEEnricher
 
 
 class SlidingWindowRateLimiter:
@@ -56,7 +57,18 @@ class VulnerabilityOrchestrator:
             timeout=Config.DEFAULT_TIMEOUT,
             max_scan_seconds=Config.MAX_SCAN_SECONDS,
         )
-        self.container_scanner = DockerfileAnalyzer()
+        self.container_scanner = DockerfileAnalyzer(
+            trivy_enabled=Config.TRIVY_ENABLED,
+            trivy_command=Config.TRIVY_COMMAND,
+            trivy_timeout_seconds=Config.TRIVY_TIMEOUT_SECONDS,
+            trivy_max_findings=Config.TRIVY_MAX_FINDINGS,
+        )
+        self.cve_enricher = CVEEnricher(
+            enabled=Config.NVD_ENRICH_ENABLED,
+            api_key=Config.NVD_API_KEY,
+            timeout_seconds=Config.NVD_TIMEOUT_SECONDS,
+            min_interval_seconds=Config.NVD_MIN_INTERVAL_SECONDS,
+        )
         self.risk_engine = RiskCalculator()
         self.reporter = ReportGenerator(output_dir=Config.REPORTS_DIR)
         self.session_factory = session_factory
@@ -71,6 +83,8 @@ class VulnerabilityOrchestrator:
         if dockerfile_path:
             container_findings = self.container_scanner.scan(dockerfile_path)
 
+        api_findings = self.cve_enricher.enrich_findings(api_findings)
+        container_findings = self.cve_enricher.enrich_findings(container_findings)
         all_findings = api_findings + container_findings
         risk_summary = self.risk_engine.calculate(all_findings)
         report_paths = self.reporter.generate(api_findings, container_findings, risk_summary)
@@ -117,6 +131,8 @@ class VulnerabilityOrchestrator:
                         category=finding.get("category", "unknown"),
                         issue_type=finding.get("type", "UnknownIssue"),
                         severity=finding.get("severity", "Low"),
+                        cve_id=finding.get("cve_id"),
+                        cvss_score=finding.get("cvss_score"),
                         description=finding.get("description", "No description provided."),
                         payload=finding.get("payload"),
                     )

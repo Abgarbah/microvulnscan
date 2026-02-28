@@ -10,6 +10,12 @@ def _resolve_path(path_value: str) -> str:
     return os.path.abspath(os.path.join(BASE_DIR, path_value))
 
 
+def _to_bool(value: str, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Config:
     APP_NAME = "VulnMicroScan"
     SECRET_KEY = os.getenv("VMS_SECRET_KEY", "change-me-in-production")
@@ -34,3 +40,13 @@ class Config:
 
     RATE_LIMIT_REQUESTS = int(os.getenv("VMS_RATE_LIMIT_REQUESTS", "5"))
     RATE_LIMIT_WINDOW_SECONDS = int(os.getenv("VMS_RATE_LIMIT_WINDOW_SECONDS", "60"))
+
+    TRIVY_ENABLED = _to_bool(os.getenv("VMS_TRIVY_ENABLED"), default=True)
+    TRIVY_COMMAND = os.getenv("VMS_TRIVY_COMMAND", "trivy")
+    TRIVY_TIMEOUT_SECONDS = int(os.getenv("VMS_TRIVY_TIMEOUT_SECONDS", "90"))
+    TRIVY_MAX_FINDINGS = int(os.getenv("VMS_TRIVY_MAX_FINDINGS", "100"))
+
+    NVD_ENRICH_ENABLED = _to_bool(os.getenv("VMS_NVD_ENRICH_ENABLED"), default=True)
+    NVD_API_KEY = os.getenv("VMS_NVD_API_KEY")
+    NVD_TIMEOUT_SECONDS = int(os.getenv("VMS_NVD_TIMEOUT_SECONDS", "12"))
+    NVD_MIN_INTERVAL_SECONDS = float(os.getenv("VMS_NVD_MIN_INTERVAL_SECONDS", "0.7"))

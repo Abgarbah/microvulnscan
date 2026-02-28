@@ -4,175 +4,104 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ app_name }} | Dashboard</title>
-  <style>
-    :root {
-      --bg: #f4f7fb;
-      --surface: #ffffff;
-      --text: #0b132b;
-      --muted: #4f5d75;
-      --accent: #0a9396;
-      --danger: #b00020;
-      --border: #d9e2ec;
-    }
-
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(180deg, #edf3fb 0%, #f8fafc 100%);
-      color: var(--text);
-    }
-
-    .wrap {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 18px 40px;
-    }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 18px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 16px rgba(10, 40, 80, 0.06);
-    }
-
-    h1, h2 { margin-top: 0; }
-    p { color: var(--muted); }
-
-    .row {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    input, textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 14px;
-    }
-
-    textarea { min-height: 88px; }
-
-    .btn {
-      background: var(--accent);
-      color: #fff;
-      border: 0;
-      border-radius: 8px;
-      padding: 10px 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .msg {
-      padding: 10px 12px;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #e7b9c2;
-      color: var(--danger);
-      background: #fff4f6;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 14px;
-    }
-
-    th, td {
-      text-align: left;
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    a { color: #0b5d9a; text-decoration: none; }
-  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>{{ app_name }}</h1>
-      <p>Scan microservice APIs and Dockerfiles, calculate risk, and generate evidence reports.</p>
-      <form method="post" action="{{ url_for('logout') }}">
-        <button class="btn" type="submit">Logout</button>
-      </form>
-    </div>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-head">
+        <div>
+          <p class="kicker">Security Operations</p>
+          <h1>{{ app_name }} Dashboard</h1>
+          <p>Scan API endpoints and Dockerfiles, prioritize risk quickly, and export audit-ready reports.</p>
+        </div>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button class="btn btn-alt" type="submit">Logout</button>
+        </form>
+      </div>
+    </header>
 
-    <div class="card">
-      <h2>Start Scan</h2>
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-          {% for category, message in messages %}
-            <div class="msg">{{ message }}</div>
-          {% endfor %}
+    <section class="layout">
+      <article class="panel">
+        <p class="kicker">Start Scan</p>
+        <h2>Launch New Assessment</h2>
+        <p>Provide a target API, a Dockerfile path, or both. Endpoints can be comma or newline separated.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="post" action="{{ url_for('run_scan_web') }}">
+          <div class="form-grid">
+            <div class="field">
+              <label for="base_url">Base URL</label>
+              <input id="base_url" name="base_url" type="text" placeholder="https://api.example.com" />
+            </div>
+            <div class="field">
+              <label for="dockerfile_path">Dockerfile Path</label>
+              <input id="dockerfile_path" name="dockerfile_path" type="text" placeholder="C:\\repo\\service\\Dockerfile" />
+            </div>
+            <div class="field field-wide">
+              <label for="endpoints">Endpoints</label>
+              <textarea id="endpoints" name="endpoints" placeholder="/health&#10;/api/users&#10;/api/orders"></textarea>
+            </div>
+          </div>
+          <div class="button-row">
+            <button class="btn btn-primary" type="submit">Run Scan</button>
+          </div>
+        </form>
+      </article>
+
+      <article class="panel">
+        <p class="kicker">Recent Runs</p>
+        <h2>Latest Activity</h2>
+        <p>Most recent 20 scans, including risk and report downloads.</p>
+
+        {% if runs %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>When (UTC)</th>
+                  <th>Risk</th>
+                  <th>Score</th>
+                  <th>Source</th>
+                  <th>Reports</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for run in runs %}
+                  <tr>
+                    <td><a href="{{ url_for('results', scan_run_id=run.id) }}">#{{ run.id }}</a></td>
+                    <td>{{ run.created_at }}</td>
+                    <td>
+                      <span class="chip chip-{{ run.risk_level|lower }}">{{ run.risk_level }}</span>
+                    </td>
+                    <td>{{ run.total_score }}</td>
+                    <td>{{ run.source }}</td>
+                    <td>
+                      <a href="{{ url_for('download_report', filename=run.report_files.json) }}">JSON</a> |
+                      <a href="{{ url_for('download_report', filename=run.report_files.html) }}">HTML</a> |
+                      <a href="{{ url_for('download_report', filename=run.report_files.pdf) }}">PDF</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">No scan runs yet. Launch your first assessment to populate this table.</p>
         {% endif %}
-      {% endwith %}
-
-      <form method="post" action="{{ url_for('run_scan_web') }}">
-        <div class="row">
-          <div>
-            <label for="base_url">Base URL (optional)</label>
-            <input id="base_url" name="base_url" type="text" placeholder="http://localhost:8080" />
-          </div>
-          <div>
-            <label for="dockerfile_path">Dockerfile Path (optional)</label>
-            <input id="dockerfile_path" name="dockerfile_path" type="text" placeholder="C:\\repo\\service\\Dockerfile" />
-          </div>
-        </div>
-        <div style="margin-top: 12px;">
-          <label for="endpoints">Endpoints (comma or newline separated)</label>
-          <textarea id="endpoints" name="endpoints" placeholder="/health\n/api/users\n/api/orders"></textarea>
-        </div>
-        <div style="margin-top: 12px;">
-          <button class="btn" type="submit">Run Scan</button>
-        </div>
-      </form>
-    </div>
-
-    <div class="card">
-      <h2>Recent Runs</h2>
-      {% if runs %}
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>When (UTC)</th>
-            <th>Risk</th>
-            <th>Score</th>
-            <th>Source</th>
-            <th>Reports</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for run in runs %}
-          <tr>
-            <td><a href="{{ url_for('results', scan_run_id=run.id) }}">{{ run.id }}</a></td>
-            <td>{{ run.created_at }}</td>
-            <td>{{ run.risk_level }}</td>
-            <td>{{ run.total_score }}</td>
-            <td>{{ run.source }}</td>
-            <td>
-              <a href="{{ url_for('download_report', filename=run.report_files.json) }}">JSON</a> |
-              <a href="{{ url_for('download_report', filename=run.report_files.html) }}">HTML</a> |
-              <a href="{{ url_for('download_report', filename=run.report_files.pdf) }}">PDF</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>No runs yet.</p>
-      {% endif %}
-    </div>
+      </article>
+    </section>
   </div>
 </body>
 </html>
