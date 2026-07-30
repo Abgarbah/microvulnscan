@@ -22,7 +22,4 @@ services:
         value: /var/data/generated_reports
       - key: VMS_DOCKERFILE_UPLOAD_DIR
         value: /var/data/uploaded_dockerfiles
-    disk:
-      name: vulnmicroscan-data
-      mountPath: /var/data
-      sizeGB: 1
+
