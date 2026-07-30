@@ -11,6 +11,14 @@
 </head>
 <body>
   <div class="page">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark">VM</span>
+        <span>VulnMicroScan</span>
+      </a>
+      <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Dashboard</a>
+    </header>
+
     <header class="hero">
       <div class="hero-head">
         <div>
@@ -18,7 +26,7 @@
           <h1>Run #{{ run.id }}</h1>
           <p>Created {{ run.created_at }} | Source {{ run.source }} | Triggered by {{ run.triggered_by }}</p>
         </div>
-        <a class="btn btn-alt" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+        <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
       </div>
 
       <div class="metrics">
@@ -39,13 +47,14 @@
       </div>
 
       <div class="button-row">
-        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.json) }}">Download JSON</a>
-        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.html) }}">Download HTML</a>
-        <a class="btn btn-alt" href="{{ url_for('download_report', filename=report_files.pdf) }}">Download PDF</a>
+        <a class="btn btn-primary" href="{{ url_for('download_report', filename=report_files.json) }}">Download JSON</a>
+        <a class="btn btn-ghost" href="{{ url_for('download_report', filename=report_files.html) }}">Download HTML</a>
+        <a class="btn btn-ghost" href="{{ url_for('download_report', filename=report_files.pdf) }}">Download PDF</a>
       </div>
     </header>
 
-    <section class="panel" style="margin-top: 14px;">
+    <section class="results-section">
+      <div class="panel">
       <p class="kicker">Detailed Findings</p>
       <h2>Detected Issues</h2>
       {% if findings %}
@@ -84,6 +93,7 @@
       {% else %}
         <p class="muted">No findings were captured for this scan run.</p>
       {% endif %}
+      </div>
     </section>
   </div>
 </body>

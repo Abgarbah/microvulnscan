@@ -10,25 +10,25 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="page">
-    <header class="hero">
-      <div class="hero-head">
-        <div>
-          <p class="kicker">Security Operations</p>
-          <h1>{{ app_name }} Dashboard</h1>
-          <p>Scan API endpoints and Dockerfiles, prioritize risk quickly, and export audit-ready reports.</p>
-        </div>
+  <div class="page dashboard-page">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark">VM</span>
+        <span>{{ app_name }}</span>
+      </a>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="{{ url_for('runs') }}">Recent Runs</a>
         <form method="post" action="{{ url_for('logout') }}">
-          <button class="btn btn-alt" type="submit">Logout</button>
+          <button class="btn btn-ghost" type="submit">Logout</button>
         </form>
       </div>
     </header>
 
-    <section class="layout">
-      <article class="panel">
+    <main class="dashboard-sections">
+      <section class="panel dashboard-panel scan-panel" id="start-scan">
         <p class="kicker">Start Scan</p>
-        <h2>Launch New Assessment</h2>
-        <p>Provide a target API, a Dockerfile path, or both. Endpoints can be comma or newline separated.</p>
+        <h2>Launch new assessment</h2>
+        <p>Provide a target API, upload a Dockerfile, enter a Dockerfile path for local scans, or combine them. Endpoints can be comma or newline separated.</p>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -38,7 +38,7 @@
           {% endif %}
         {% endwith %}
 
-        <form method="post" action="{{ url_for('run_scan_web') }}">
+        <form method="post" action="{{ url_for('run_scan_web') }}" enctype="multipart/form-data">
           <div class="form-grid">
             <div class="field">
               <label for="base_url">Base URL</label>
@@ -49,59 +49,21 @@
               <input id="dockerfile_path" name="dockerfile_path" type="text" placeholder="C:\\repo\\service\\Dockerfile" />
             </div>
             <div class="field field-wide">
+              <label for="dockerfile_upload">Dockerfile Upload</label>
+              <input id="dockerfile_upload" name="dockerfile_upload" type="file" accept=".dockerfile,.txt,Dockerfile" />
+            </div>
+            <div class="field field-wide">
               <label for="endpoints">Endpoints</label>
               <textarea id="endpoints" name="endpoints" placeholder="/health&#10;/api/users&#10;/api/orders"></textarea>
             </div>
           </div>
           <div class="button-row">
             <button class="btn btn-primary" type="submit">Run Scan</button>
+            <a class="btn btn-alt" href="{{ url_for('runs') }}">View Recent Runs</a>
           </div>
         </form>
-      </article>
-
-      <article class="panel">
-        <p class="kicker">Recent Runs</p>
-        <h2>Latest Activity</h2>
-        <p>Most recent 20 scans, including risk and report downloads.</p>
-
-        {% if runs %}
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>When (UTC)</th>
-                  <th>Risk</th>
-                  <th>Score</th>
-                  <th>Source</th>
-                  <th>Reports</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for run in runs %}
-                  <tr>
-                    <td><a href="{{ url_for('results', scan_run_id=run.id) }}">#{{ run.id }}</a></td>
-                    <td>{{ run.created_at }}</td>
-                    <td>
-                      <span class="chip chip-{{ run.risk_level|lower }}">{{ run.risk_level }}</span>
-                    </td>
-                    <td>{{ run.total_score }}</td>
-                    <td>{{ run.source }}</td>
-                    <td>
-                      <a href="{{ url_for('download_report', filename=run.report_files.json) }}">JSON</a> |
-                      <a href="{{ url_for('download_report', filename=run.report_files.html) }}">HTML</a> |
-                      <a href="{{ url_for('download_report', filename=run.report_files.pdf) }}">PDF</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p class="muted">No scan runs yet. Launch your first assessment to populate this table.</p>
-        {% endif %}
-      </article>
-    </section>
+      </section>
+    </main>
   </div>
 </body>
 </html>

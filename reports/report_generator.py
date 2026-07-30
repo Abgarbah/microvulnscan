@@ -12,13 +12,14 @@ class ReportGenerator:
         self.output_dir = os.path.abspath(output_dir)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def generate(self, api_findings, container_findings, risk_summary):
+    def generate(self, api_findings, container_findings, risk_summary, scan_info=None):
         timestamp = datetime.utcnow()
         report_data = {
             "generated_at": timestamp.isoformat() + "Z",
             "api_findings": api_findings,
             "container_findings": container_findings,
             "risk_summary": risk_summary,
+            "scan_info": scan_info or {},
         }
 
         # Include microseconds to prevent collisions for rapid back-to-back scans.
@@ -81,40 +82,135 @@ class ReportGenerator:
     def _write_pdf(self, output_path, report_data):
         c = canvas.Canvas(output_path, pagesize=letter)
         width, height = letter
-        y = height - 40
-
-        c.setFont("Helvetica-Bold", 14)
-        c.drawString(40, y, "VulnMicroScan Report")
-        y -= 24
-
-        c.setFont("Helvetica", 10)
-        c.drawString(40, y, f"Generated at: {report_data['generated_at']}")
-        y -= 14
-        c.drawString(40, y, f"Risk level: {report_data['risk_summary']['risk_level']}")
-        y -= 14
-        c.drawString(40, y, f"Total score: {report_data['risk_summary']['total_score']}")
-        y -= 20
-
-        c.setFont("Helvetica-Bold", 11)
-        c.drawString(40, y, "Findings")
-        y -= 16
-        c.setFont("Helvetica", 9)
-
+        left = 54
+        right = width - 54
+        y = height - 54
+        risk_summary = report_data["risk_summary"]
+        scan_info = report_data.get("scan_info") or {}
         findings = report_data["api_findings"] + report_data["container_findings"]
-        if not findings:
-            c.drawString(40, y, "No findings.")
-        else:
-            for finding in findings[:200]:
-                line = (
-                    f"[{finding.get('severity', 'Low')}] "
-                    f"{finding.get('type', 'UnknownIssue')} - "
-                    f"{finding.get('target', 'unknown')}"
-                )
-                c.drawString(40, y, line[:110])
-                y -= 12
-                if y < 40:
-                    c.showPage()
-                    y = height - 40
-                    c.setFont("Helvetica", 9)
 
+        def new_page():
+            nonlocal y
+            c.showPage()
+            y = height - 54
+            c.setFont("Courier", 10)
+
+        def ensure_space(points):
+            if y < points:
+                new_page()
+
+        def divider():
+            nonlocal y
+            ensure_space(70)
+            c.setStrokeColorRGB(0.72, 0.75, 0.8)
+            c.line(left, y, right, y)
+            y -= 18
+
+        def text(label, value):
+            nonlocal y
+            ensure_space(58)
+            c.setFont("Courier-Bold", 10)
+            c.drawString(left, y, f"{label:<14}:")
+            c.setFont("Courier", 10)
+            c.drawString(left + 102, y, str(value))
+            y -= 16
+
+        def section(title):
+            nonlocal y
+            ensure_space(72)
+            divider()
+            c.setFont("Courier-Bold", 12)
+            c.drawString(left, y, title)
+            y -= 18
+
+        c.setTitle("MicroVulnScan Report")
+        c.setFont("Courier-Bold", 16)
+        c.rect(left, y - 34, right - left, 34, stroke=1, fill=0)
+        c.drawCentredString(width / 2, y - 22, "MicroVulnScan Report")
+        y -= 58
+
+        c.setFont("Courier-Bold", 12)
+        c.drawString(left, y, "Scan Information")
+        y -= 18
+        divider()
+        text("Target", scan_info.get("target") or self._target_from_findings(findings))
+        text("Scanner", scan_info.get("scanner") or "VulnMicroScan")
+        text("Date", self._pdf_date(report_data["generated_at"]))
+        text("Status", scan_info.get("status") or "Completed")
+        y -= 8
+        text("Overall Risk", str(risk_summary.get("risk_level", "Unknown")).upper())
+        text("Risk Score", f"{risk_summary.get('total_score', 0)} / 100")
+
+        section("Vulnerability Summary")
+        counts = risk_summary.get("severity_count", {}) or {}
+        for severity in ("Critical", "High", "Medium", "Low"):
+            c.setFont("Courier", 10)
+            c.drawString(left, y, f"{severity:<14}{counts.get(severity, 0)}")
+            y -= 16
+
+        section("Findings")
+        if not findings:
+            c.setFont("Courier", 10)
+            c.drawString(left, y, "No findings were captured.")
+            y -= 16
+        else:
+            c.setFont("Courier", 9)
+            for finding in findings[:200]:
+                ensure_space(70)
+                severity = self._short_text(str(finding.get("severity") or "Low").title(), 9)
+                issue_type = self._short_text(finding.get("type") or finding.get("issue_type") or "UnknownIssue", 28)
+                target = self._short_text(finding.get("target") or "unknown", 30)
+                c.drawString(left, y, f"{severity:<9}{issue_type:<30}{target}")
+                y -= 14
+            if len(findings) > 200:
+                c.drawString(left, y, f"... {len(findings) - 200} additional findings omitted")
+                y -= 14
+
+        section("Recommendations")
+        c.setFont("Courier", 10)
+        for item in self._recommendations(findings, risk_summary):
+            ensure_space(58)
+            c.drawString(left, y, f"- {item}")
+            y -= 16
+
+        divider()
+        c.setFont("Courier-Bold", 10)
+        c.drawString(left, y, "Generated by MicroVulnScan")
         c.save()
+
+    def _pdf_date(self, generated_at):
+        try:
+            value = datetime.fromisoformat(str(generated_at).replace("Z", "+00:00"))
+            return value.strftime("%d-%m-%Y")
+        except ValueError:
+            return str(generated_at)[:10]
+
+    def _target_from_findings(self, findings):
+        for finding in findings:
+            target = finding.get("target")
+            if target:
+                return target
+        return "Not specified"
+
+    def _recommendations(self, findings, risk_summary):
+        recommendations = []
+        text = " ".join(
+            f"{finding.get('type', '')} {finding.get('description', '')}".lower()
+            for finding in findings
+        )
+        if "header" in text:
+            recommendations.append("Configure HTTP security headers")
+        if "error" in text or "disclosure" in text:
+            recommendations.append("Disable verbose error messages")
+        if "time limit" in text or "timeout" in text:
+            recommendations.append("Increase scan timeout")
+        if risk_summary.get("risk_level") in {"Critical", "High", "Medium"}:
+            recommendations.append("Prioritize remediation by severity")
+        recommendations.append("Re-run assessment")
+        return recommendations
+
+    def _short_text(self, value, max_length):
+        text = " ".join(str(value).split())
+        if len(text) <= max_length:
+            return text
+        return text[: max_length - 3].rstrip() + "..."

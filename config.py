@@ -31,6 +31,8 @@ class Config:
     MAX_ENDPOINTS = int(os.getenv("VMS_MAX_ENDPOINTS", "100"))
     MAX_SCAN_SECONDS = int(os.getenv("VMS_MAX_SCAN_SECONDS", "30"))
     REPORTS_DIR = _resolve_path(os.getenv("VMS_REPORTS_DIR", "generated_reports"))
+    DOCKERFILE_UPLOAD_DIR = _resolve_path(os.getenv("VMS_DOCKERFILE_UPLOAD_DIR", "uploaded_dockerfiles"))
+    MAX_DOCKERFILE_UPLOAD_BYTES = int(os.getenv("VMS_MAX_DOCKERFILE_UPLOAD_BYTES", "524288"))
 
     AUTH_USERNAME = os.getenv("VMS_AUTH_USERNAME", "admin")
     AUTH_PASSWORD = os.getenv("VMS_AUTH_PASSWORD", "change-me")

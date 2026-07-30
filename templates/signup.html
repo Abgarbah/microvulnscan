@@ -10,19 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="auth-shell">
-    <aside class="auth-side">
-      <p class="kicker">Setup Access</p>
-      <h1>{{ app_name }}</h1>
-      <p>Create an account to manage vulnerability scans and keep report history in one place.</p>
-      <ul class="auth-list">
-        <li>Track and review the latest 20 scan runs quickly.</li>
-        <li>Download formal report artifacts in multiple formats.</li>
-        <li>Secure access with session-backed authentication.</li>
-      </ul>
-    </aside>
-
-    <main class="auth-panel">
+  <main class="account-page">
+    <section class="account-panel">
+      <a class="account-back" href="{{ url_for('index') }}">Back to home</a>
       <p class="kicker">Create Account</p>
       <h2>Get started</h2>
       <p class="muted">Use at least 3 characters for usernames and 8 for passwords.</p>
@@ -53,7 +43,7 @@
           <a class="btn btn-alt" href="{{ url_for('login') }}">Back to Sign In</a>
         </div>
       </form>
-    </main>
-  </div>
+    </section>
+  </main>
 </body>
 </html>

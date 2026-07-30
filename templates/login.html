@@ -10,19 +10,9 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="auth-shell">
-    <aside class="auth-side">
-      <p class="kicker">Security Platform</p>
-      <h1>{{ app_name }}</h1>
-      <p>Scan API endpoints and Dockerfiles, then generate clear evidence reports with weighted risk scoring.</p>
-      <ul class="auth-list">
-        <li>Automated checks for API and container security issues.</li>
-        <li>Risk insights prioritized by severity and confidence.</li>
-        <li>Exportable reports in JSON, HTML, and PDF formats.</li>
-      </ul>
-    </aside>
-
-    <main class="auth-panel">
+  <main class="account-page">
+    <section class="account-panel">
+      <a class="account-back" href="{{ url_for('index') }}">Back to home</a>
       <p class="kicker">Welcome Back</p>
       <h2>Sign in to continue</h2>
       <p class="muted">Use your account to launch scans and review previous runs.</p>
@@ -49,7 +39,7 @@
           <a class="btn btn-alt" href="{{ url_for('signup') }}">Create Account</a>
         </div>
       </form>
-    </main>
-  </div>
+    </section>
+  </main>
 </body>
 </html>

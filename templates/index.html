@@ -3,23 +3,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VulnMicroScan</title>
+  <title>{{ app_name }}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
 </head>
 <body>
-  <div class="page">
-    <section class="hero">
-      <p class="kicker">Application Entry</p>
-      <h1>VulnMicroScan</h1>
-      <p>Proceed to authentication to access the dashboard and launch scans.</p>
-      <div class="button-row">
-        <a class="btn btn-primary" href="{{ url_for('login') }}">Sign In</a>
-        <a class="btn btn-alt" href="{{ url_for('signup') }}">Create Account</a>
+  <main class="landing-page">
+    <section class="landing-hero">
+      <div class="landing-grid">
+        <div class="landing-content">
+          <p class="kicker">Security Platform</p>
+          <h1>Security scanning built for API and container teams</h1>
+          <p class="landing-copy">Unite development, security, and operations work with continuous checks, prioritized findings, and exportable evidence in one focused dashboard.</p>
+          <ul class="landing-list">
+            <li>Spot risks in production</li>
+            <li>Prioritize what matters</li>
+            <li>Export reports faster</li>
+          </ul>
+          <div class="button-row">
+            <a class="btn btn-primary" href="{{ url_for('login') }}">Sign In</a>
+            <a class="btn btn-ghost" href="{{ url_for('signup') }}">Create Account</a>
+          </div>
+        </div>
+
+        <div class="security-preview" aria-hidden="true">
+          <div class="preview-toolbar">
+            <span></span><span></span><span></span>
+            <strong>Risk Inbox</strong>
+          </div>
+          <div class="preview-tabs">
+            <span class="active">Inbox</span>
+            <span>Signals</span>
+            <span>Application Security</span>
+            <span>Cloud Security</span>
+          </div>
+          <div class="preview-row critical">
+            <b>Critical</b>
+            <span>Public endpoint exposes command injection vector</span>
+            <em>now</em>
+          </div>
+          <div class="preview-row critical">
+            <b>Critical</b>
+            <span>Base image contains exploitable package CVE</span>
+            <em>12m</em>
+          </div>
+          <div class="preview-row high">
+            <b>High</b>
+            <span>Missing strict transport security header</span>
+            <em>1h</em>
+          </div>
+          <div class="preview-row medium">
+            <b>Medium</b>
+            <span>Container runs without hardened user policy</span>
+            <em>2h</em>
+          </div>
+        </div>
       </div>
     </section>
-  </div>
+  </main>
 </body>
 </html>

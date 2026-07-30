@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 from functools import wraps
@@ -7,6 +8,7 @@ from urllib.parse import urlparse
 
 import jwt
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from flask import (
     Flask,
     flash,
@@ -87,7 +89,12 @@ class VulnerabilityOrchestrator:
         container_findings = self.cve_enricher.enrich_findings(container_findings)
         all_findings = api_findings + container_findings
         risk_summary = self.risk_engine.calculate(all_findings)
-        report_paths = self.reporter.generate(api_findings, container_findings, risk_summary)
+        scan_info = {
+            "target": base_url or dockerfile_path or "Not specified",
+            "scanner": "VulnMicroScan",
+            "status": "Completed",
+        }
+        report_paths = self.reporter.generate(api_findings, container_findings, risk_summary, scan_info=scan_info)
 
         scan_run_id = self._persist(
             base_url=base_url,
@@ -146,6 +153,7 @@ class VulnerabilityOrchestrator:
 
 app = Flask(__name__)
 app.config.from_object(Config)
+os.makedirs(app.config["DOCKERFILE_UPLOAD_DIR"], exist_ok=True)
 SessionLocal = init_db(app.config["SQLALCHEMY_DATABASE_URI"])
 orchestrator = VulnerabilityOrchestrator(SessionLocal)
 rate_limiter = SlidingWindowRateLimiter(
@@ -251,6 +259,29 @@ def _is_self_scan_target(base_url):
         return False
 
 
+def _save_uploaded_dockerfile(file_storage):
+    if not file_storage or not file_storage.filename:
+        return None, None
+
+    original_name = secure_filename(file_storage.filename) or "Dockerfile"
+    lower_name = original_name.lower()
+    allowed = lower_name == "dockerfile" or lower_name.endswith((".dockerfile", ".txt", ".dockerfile.txt"))
+    if not allowed:
+        return None, "Upload a Dockerfile, .dockerfile, or .txt file."
+
+    data = file_storage.read(app.config["MAX_DOCKERFILE_UPLOAD_BYTES"] + 1)
+    if len(data) > app.config["MAX_DOCKERFILE_UPLOAD_BYTES"]:
+        max_kb = app.config["MAX_DOCKERFILE_UPLOAD_BYTES"] // 1024
+        return None, f"Dockerfile upload is too large. Maximum size is {max_kb} KB."
+
+    upload_name = f"{uuid.uuid4().hex}_{original_name}"
+    upload_path = os.path.join(app.config["DOCKERFILE_UPLOAD_DIR"], upload_name)
+    with open(upload_path, "wb") as uploaded:
+        uploaded.write(data)
+
+    return upload_path, None
+
+
 def _derive_report_files(report_json_path):
     base_name = os.path.splitext(os.path.basename(report_json_path))[0]
     return {
@@ -276,7 +307,7 @@ def _authenticate_credentials(username, password):
 def index():
     if session.get("access_token"):
         return redirect(url_for("dashboard"))
-    return redirect(url_for("login"))
+    return render_template("index.html", app_name=app.config["APP_NAME"])
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -359,11 +390,17 @@ def issue_api_token():
 @app.route("/dashboard", methods=["GET"])
 @require_jwt
 def dashboard():
+    return render_template("dashboard.html", app_name=app.config["APP_NAME"])
+
+
+@app.route("/runs", methods=["GET"])
+@require_jwt
+def runs():
     db = SessionLocal()
     try:
-        runs = db.query(ScanRun).order_by(ScanRun.created_at.desc()).limit(20).all()
+        scan_runs = db.query(ScanRun).order_by(ScanRun.created_at.desc()).limit(20).all()
         runs_view = []
-        for run in runs:
+        for run in scan_runs:
             runs_view.append(
                 {
                     "id": run.id,
@@ -377,7 +414,7 @@ def dashboard():
     finally:
         db.close()
 
-    return render_template("dashboard.html", app_name=app.config["APP_NAME"], runs=runs_view)
+    return render_template("runs.html", app_name=app.config["APP_NAME"], runs=runs_view)
 
 
 @app.route("/scan", methods=["POST"])
@@ -387,21 +424,41 @@ def run_scan_web():
     base_url = (request.form.get("base_url") or "").strip() or None
     dockerfile_path = (request.form.get("dockerfile_path") or "").strip() or None
     endpoints = _parse_endpoints(request.form.get("endpoints", ""))
+    uploaded_path, upload_error = _save_uploaded_dockerfile(request.files.get("dockerfile_upload"))
+
+    if upload_error:
+        flash(upload_error, "error")
+        return redirect(url_for("dashboard"))
+    if uploaded_path:
+        dockerfile_path = uploaded_path
 
     if not base_url and not dockerfile_path:
-        flash("Provide at least one scan target (base URL or Dockerfile path).", "error")
+        flash("Provide at least one scan target (base URL, Dockerfile path, or Dockerfile upload).", "error")
         return redirect(url_for("dashboard"))
     if _is_self_scan_target(base_url):
+        if uploaded_path:
+            try:
+                os.remove(uploaded_path)
+            except OSError:
+                pass
         flash("Self-target scan blocked. Use another API host to avoid request deadlock.", "error")
         return redirect(url_for("dashboard"))
 
-    result = orchestrator.run(
-        base_url=base_url,
-        endpoints=endpoints,
-        dockerfile_path=dockerfile_path,
-        source="web",
-        triggered_by=g.jwt_claims.get("sub", request.remote_addr or "unknown"),
-    )
+    try:
+        result = orchestrator.run(
+            base_url=base_url,
+            endpoints=endpoints,
+            dockerfile_path=dockerfile_path,
+            source="web",
+            triggered_by=g.jwt_claims.get("sub", request.remote_addr or "unknown"),
+        )
+    finally:
+        if uploaded_path:
+            try:
+                os.remove(uploaded_path)
+            except OSError:
+                pass
+
     return redirect(url_for("results", scan_run_id=result["scan_run_id"]))
 
 
