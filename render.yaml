@@ -3,7 +3,6 @@ services:
     name: vulnmicroscan
     env: python
     plan: free
-    rootDir: VulnMicroScan
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120
     envVars:
