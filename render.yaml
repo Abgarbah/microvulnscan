@@ -17,9 +17,9 @@ services:
       - key: VMS_AUTH_PASSWORD
         value: change-me
       - key: DATABASE_URL
-        value: sqlite:////var/data/vulnmicroscan.db
+        value: sqlite:////tmp/vulnmicroscan.db
       - key: VMS_REPORTS_DIR
-        value: /var/data/generated_reports
+        value: /tmp/generated_reports
       - key: VMS_DOCKERFILE_UPLOAD_DIR
-        value: /var/data/uploaded_dockerfiles
+        value: /tmp/uploaded_dockerfiles
 
