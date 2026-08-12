@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: vulnmicroscan
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: VMS_SECRET_KEY
+        generateValue: true
+      - key: VMS_JWT_SECRET
+        generateValue: true
+      - key: VMS_AUTH_USERNAME
+        value: admin
+      - key: VMS_AUTH_PASSWORD
+        value: change-me
+      - key: DATABASE_URL
+        value: sqlite:////tmp/vulnmicroscan.db
+      - key: VMS_REPORTS_DIR
+        value: /tmp/generated_reports
+      - key: VMS_DOCKERFILE_UPLOAD_DIR
+        value: /tmp/uploaded_dockerfiles
+

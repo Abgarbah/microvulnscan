@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }} | Recent Runs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
+</head>
+<body>
+  <div class="page dashboard-page">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark">VM</span>
+        <span>{{ app_name }}</span>
+      </a>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button class="btn btn-ghost" type="submit">Logout</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="dashboard-sections">
+      <section class="panel dashboard-panel activity-panel">
+        <p class="kicker">Recent Runs</p>
+        <h2>Latest activity</h2>
+        <p>Most recent 20 scans, including risk and report downloads.</p>
+
+        {% if runs %}
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>When (UTC)</th>
+                  <th>Risk</th>
+                  <th>Score</th>
+                  <th>Source</th>
+                  <th>Reports</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for run in runs %}
+                  <tr>
+                    <td><a href="{{ url_for('results', scan_run_id=run.id) }}">#{{ run.id }}</a></td>
+                    <td>{{ run.created_at }}</td>
+                    <td>
+                      <span class="chip chip-{{ run.risk_level|lower }}">{{ run.risk_level }}</span>
+                    </td>
+                    <td>{{ run.total_score }}</td>
+                    <td>{{ run.source }}</td>
+                    <td class="report-links">
+                      <a href="{{ url_for('download_report', filename=run.report_files.json) }}">JSON</a>
+                      <a href="{{ url_for('download_report', filename=run.report_files.html) }}">HTML</a>
+                      <a href="{{ url_for('download_report', filename=run.report_files.pdf) }}">PDF</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="muted">No scan runs yet. Launch your first assessment from the dashboard to populate this table.</p>
+          <div class="button-row">
+            <a class="btn btn-primary" href="{{ url_for('dashboard') }}">Launch Assessment</a>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>

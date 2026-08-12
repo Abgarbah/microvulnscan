@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }} | Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}" />
+</head>
+<body>
+  <div class="page dashboard-page">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('dashboard') }}">
+        <span class="brand-mark">VM</span>
+        <span>{{ app_name }}</span>
+      </a>
+      <div class="topbar-actions">
+        <a class="btn btn-ghost" href="{{ url_for('runs') }}">Recent Runs</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button class="btn btn-ghost" type="submit">Logout</button>
+        </form>
+      </div>
+    </header>
+
+    <main class="dashboard-sections">
+      <section class="panel dashboard-panel scan-panel" id="start-scan">
+        <p class="kicker">Start Scan</p>
+        <h2>Launch new assessment</h2>
+        <p>Provide a target API, upload a Dockerfile, or combine them. Endpoints can be comma or newline separated.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form id="scan-form" method="post" action="{{ url_for('run_scan_web') }}" enctype="multipart/form-data">
+          <div class="form-grid">
+            <div class="field">
+              <label for="base_url">Base URL</label>
+              <input id="base_url" name="base_url" type="text" placeholder="https://api.example.com" />
+            </div>
+            <div class="field field-wide">
+              <label for="dockerfile_upload">Dockerfile Upload</label>
+              <input id="dockerfile_upload" name="dockerfile_upload" type="file" accept=".dockerfile,.txt,Dockerfile" />
+            </div>
+            <div class="field field-wide">
+              <label for="endpoints">Endpoints</label>
+              <textarea id="endpoints" name="endpoints" placeholder="/health&#10;/api/users&#10;/api/orders"></textarea>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="run-scan-button" class="btn btn-primary" type="submit">Run Scan</button>
+            <div id="scan-progress" class="scan-progress" role="status" aria-live="polite" aria-hidden="true" hidden>
+              <span class="scan-spinner" aria-hidden="true"></span>
+              <span>Scanning...</span>
+            </div>
+            <a class="btn btn-alt" href="{{ url_for('runs') }}">View Recent Runs</a>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const form = document.getElementById("scan-form");
+      const button = document.getElementById("run-scan-button");
+      const progress = document.getElementById("scan-progress");
+      const originalButtonText = button.textContent;
+
+      const resetScanState = () => {
+        button.disabled = false;
+        button.textContent = originalButtonText;
+        progress.hidden = true;
+        progress.setAttribute("aria-hidden", "true");
+      };
+
+      form.addEventListener("submit", () => {
+        if (button.disabled) {
+          return;
+        }
+        button.disabled = true;
+        button.textContent = "Scanning...";
+        progress.hidden = false;
+        progress.setAttribute("aria-hidden", "false");
+      });
+
+      window.addEventListener("pageshow", resetScanState);
+    })();
+  </script>
+</body>
+</html>
