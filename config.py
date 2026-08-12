@@ -17,7 +17,7 @@ def _to_bool(value: str, default: bool = False) -> bool:
 
 
 class Config:
-    APP_NAME = "VulnMicroScan"
+    APP_NAME = "microvulnscan"
     SECRET_KEY = os.getenv("VMS_SECRET_KEY", "change-me-in-production")
 
     _db_uri = os.getenv("DATABASE_URL", "sqlite:///vulnmicroscan.db")

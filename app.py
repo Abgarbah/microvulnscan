@@ -91,7 +91,7 @@ class VulnerabilityOrchestrator:
         risk_summary = self.risk_engine.calculate(all_findings)
         scan_info = {
             "target": base_url or dockerfile_path or "Not specified",
-            "scanner": "VulnMicroScan",
+            "scanner": "microvulnscan",
             "status": "Completed",
         }
         report_paths = self.reporter.generate(api_findings, container_findings, risk_summary, scan_info=scan_info)

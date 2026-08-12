@@ -60,12 +60,12 @@ class ReportGenerator:
 
         html = (
             "<!doctype html><html><head><meta charset='utf-8'>"
-            "<title>VulnMicroScan Report</title>"
+            "<title>microvulnscan Report</title>"
             "<style>body{font-family:Arial,sans-serif;padding:20px;}"
             "table{border-collapse:collapse;width:100%;}"
             "th,td{border:1px solid #ddd;padding:8px;text-align:left;}"
             "th{background:#f4f4f4;}</style></head><body>"
-            "<h1>VulnMicroScan Report</h1>"
+            "<h1>microvulnscan Report</h1>"
             f"<p>Generated at: {escape(str(report_data['generated_at']))}</p>"
             f"<p>Risk level: <strong>{escape(str(report_data['risk_summary']['risk_level']))}</strong></p>"
             f"<p>Total score: <strong>{report_data['risk_summary']['total_score']}</strong></p>"
@@ -134,7 +134,7 @@ class ReportGenerator:
         y -= 18
         divider()
         text("Target", scan_info.get("target") or self._target_from_findings(findings))
-        text("Scanner", scan_info.get("scanner") or "VulnMicroScan")
+        text("Scanner", scan_info.get("scanner") or "microvulnscan")
         text("Date", self._pdf_date(report_data["generated_at"]))
         text("Status", scan_info.get("status") or "Completed")
         y -= 8
