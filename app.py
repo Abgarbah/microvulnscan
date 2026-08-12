@@ -422,18 +422,16 @@ def runs():
 @rate_limit
 def run_scan_web():
     base_url = (request.form.get("base_url") or "").strip() or None
-    dockerfile_path = (request.form.get("dockerfile_path") or "").strip() or None
     endpoints = _parse_endpoints(request.form.get("endpoints", ""))
     uploaded_path, upload_error = _save_uploaded_dockerfile(request.files.get("dockerfile_upload"))
 
     if upload_error:
         flash(upload_error, "error")
         return redirect(url_for("dashboard"))
-    if uploaded_path:
-        dockerfile_path = uploaded_path
+    dockerfile_path = uploaded_path
 
     if not base_url and not dockerfile_path:
-        flash("Provide at least one scan target (base URL, Dockerfile path, or Dockerfile upload).", "error")
+        flash("Provide at least one scan target (base URL or Dockerfile upload).", "error")
         return redirect(url_for("dashboard"))
     if _is_self_scan_target(base_url):
         if uploaded_path:
